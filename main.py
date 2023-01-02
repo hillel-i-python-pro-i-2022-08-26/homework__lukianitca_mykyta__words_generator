@@ -27,12 +27,13 @@ class Combinator:
 
     def product(self):
         self.logger.info("[START] Combining started [START]")
+        self.pre_clean()
         with Pool(processes=multiprocessing.cpu_count() - 1) as pool:
             result = pool.map(self._get_for_char, self.alphabet)
             self.logger.info("[PROCESS] List of filenames received [PROCESS]")
             for name in result:
                 self.logger.info(f"[PROCESS] Extracting combinations from {name} [PROCESS]")
-                with open("result.txt", mode="a") as file_result:
+                with open(STORAGE.joinpath("result/result.txt"), mode="a") as file_result:
                     with open(name, mode="r") as producer:
                         file_result.write(producer.read())
         if self.purge_after:
@@ -52,6 +53,13 @@ class Combinator:
             file.write(Combinator.writer(result) + "\n")
         return file_name
 
+    def pre_clean(self):
+        try:
+            STORAGE.joinpath("result/result.txt").unlink()
+            self.logger.info("[PRE-CLEAN] Result directory cleared [PRE-CLEAN]")
+        except FileNotFoundError:
+            self.logger.info("[PRE-CLEAN] Result directory already clear [PRE-CLEAN]")
+
     @staticmethod
     def writer(result_list: list[list]) -> str:
         return "\n".join(["".join(el) for el in result_list])
@@ -64,7 +72,7 @@ class Combinator:
 
 if __name__ == "__main__":
     # alphabet_for_combinations = ["a", "b", "c", "d", "e"]
-    repeats = 5
+    repeats = 4
     alphabet_for_combinations = ascii_lowercase + digits
-    combinator = Combinator(alphabet_for_combinations, repeats, purge_after=False)
+    combinator = Combinator(alphabet_for_combinations, repeats, purge_after=True)
     combinator.product()

@@ -129,8 +129,8 @@ dmypy.json
 .pyre/
 
 .idea/
-words_storage/
-!words_storage/.gitkeep
-!words_storage/result/.gitkeep
+./words_storage/
+!./words_storage/.gitkeep
+!./words_storage/result/.gitkeep
 
 result.txt

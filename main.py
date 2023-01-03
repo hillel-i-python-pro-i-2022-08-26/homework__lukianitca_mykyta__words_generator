@@ -8,8 +8,7 @@ from multiprocessing import Pool
 from string import ascii_lowercase, digits
 from typing import Iterable
 
-BASE_DIR = pathlib.Path(__file__)
-STORAGE = BASE_DIR.parent.joinpath("words_storage")
+STORAGE = pathlib.Path(__file__).parent.joinpath("words_storage")
 
 
 def init_logger() -> Logger:
@@ -34,23 +33,25 @@ class Combinator:
             for name in result:
                 self.logger.info(f"[PROCESS] Extracting combinations from {name} [PROCESS]")
                 with open(STORAGE.joinpath("result/result.txt"), mode="a") as file_result:
-                    with open(name, mode="r") as producer:
+                    with open(name) as producer:
                         file_result.write(producer.read())
         if self.purge_after:
             self.logger.info("[CLEANING] Purging created .txt files in storage [CLEANING]")
             Combinator.purge_files()
         self.logger.info("[END] All combinations created successfully. See result.txt file [END]")
 
-    def _get_for_char(self, char) -> pathlib.Path:
-        self.logger.info(f"[PROCESS] Processing char: {char} [PROCESS]")
-        result = []
-        file_name = STORAGE.joinpath(f"{uuid.uuid4()}.txt")
+    def combinations_generator(self, char):
         for starter_combination in product(self.alphabet, repeat=self.str_len - 1):
             combination = [char]
             combination.extend(starter_combination)
-            result.append(combination)
+            yield combination
+
+    def _get_for_char(self, char) -> pathlib.Path:
+        self.logger.info(f"[PROCESS] Processing char: {char} [PROCESS]")
+        file_name = STORAGE.joinpath(f"{uuid.uuid4()}.txt")
+        result = self.combinations_generator(char)
         with open(file_name, mode="w") as file:
-            file.write(Combinator.writer(result) + "\n")
+            file.write(Combinator.writer("".join(combination) for combination in result))
         return file_name
 
     def pre_clean(self):
@@ -61,8 +62,8 @@ class Combinator:
             self.logger.info("[PRE-CLEAN] Result directory already clear [PRE-CLEAN]")
 
     @staticmethod
-    def writer(result_list: list[list]) -> str:
-        return "\n".join(["".join(el) for el in result_list])
+    def writer(result_list: Iterable[str]) -> str:
+        return "\n".join(result_list)
 
     @staticmethod
     def purge_files():
@@ -72,7 +73,7 @@ class Combinator:
 
 if __name__ == "__main__":
     # alphabet_for_combinations = ["a", "b", "c", "d", "e"]
-    repeats = 4
+    repeats = 5
     alphabet_for_combinations = ascii_lowercase + digits
     combinator = Combinator(alphabet_for_combinations, repeats, purge_after=True)
     combinator.product()
